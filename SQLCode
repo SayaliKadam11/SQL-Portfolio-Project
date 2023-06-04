@@ -1,0 +1,117 @@
+---First imported data from Github and to check if all data imported correctly used following function
+
+select * from [Data Cleaning Project].dbo.Nashville_Housing;
+
+
+-- Standardize Date Format
+
+Select saleDateConverted, CONVERT(Date,SaleDate)
+From [Data Cleaning Project].dbo.Nashville_Housing;
+
+Update [Data Cleaning Project].dbo.Nashville_Housing
+SET SaleDate = CONVERT(Date,SaleDate)
+
+---Filled PropertyAddress with the help of selfjoin and which has identical ParcelID
+
+select NH.ParcelID, NH.PropertyAddress, b.ParcelID, b.PropertyAddress, ISNULL(NH.PropertyAddress, b.PropertyAddress)
+from [Data Cleaning Project].dbo.Nashville_Housing as NH
+Join [Data Cleaning Project].dbo.Nashville_Housing as b
+on NH.ParcelID = b.ParcelID
+AND NH.UniqueID <> b.UniqueID
+where NH.PropertyAddress is Null;
+
+Update NH
+SET PropertyAddress = ISNULL(NH.PropertyAddress, b.PropertyAddress)
+from [Data Cleaning Project].dbo.Nashville_Housing as NH
+join [Data Cleaning Project].dbo.Nashville_Housing as b
+on NH.parcelId = b.ParcelID
+AND nh.UniqueID <> b.UniqueID
+where NH.PropertyAddress is null;
+
+
+---Separated Address and City from PropertyAddress
+
+select
+substring(PropertyAddress,1,CHARINDEX(',',PropertyAddress)-1) as Address,
+substring(propertyAddress,CHARINDEX(',',PropertyAddress)+1,Len(PropertyAddress)) as Address
+
+from [Data Cleaning Project].dbo.Nashville_Housing
+
+alter table [Data Cleaning Project].dbo.Nashville_Housing
+add SplitAddress nvarchar(200);
+
+update [Data Cleaning Project].dbo.Nashville_Housing
+SET SplitAddress = substring(PropertyAddress,1,CHARINDEX(',',PropertyAddress)-1)
+
+alter table [Data Cleaning Project].dbo.Nashville_Housing
+add SplitCity nvarchar(200);
+
+update [Data Cleaning Project].dbo.Nashville_Housing
+SET SplitCity = substring(propertyAddress,CHARINDEX(',',PropertyAddress)+1,Len(PropertyAddress))
+
+select * from  [Data Cleaning Project].dbo.Nashville_Housing;
+
+---Separated Address, City and State from OwnerAddress column
+
+select OwnerAddress from  [Data Cleaning Project].dbo.Nashville_Housing;
+
+
+select
+
+PARSENAME(Replace(OwnerAddress,',','.'),3),
+PARSENAME(Replace(OwnerAddress,',','.'),2),
+PARSENAME(Replace(OwnerAddress,',','.'),1)
+
+alter table [Data Cleaning Project].dbo.Nashville_Housing
+add OwnerSplitAddress nvarchar(200);
+
+update [Data Cleaning Project].dbo.Nashville_Housing
+SET OwnerSplitAddress = PARSENAME(Replace(OwnerAddress,',','.'),3)
+
+alter table [Data Cleaning Project].dbo.Nashville_Housing
+add OwnerSplitCity nvarchar(200);
+
+update [Data Cleaning Project].dbo.Nashville_Housing
+SET OwnerSplitCity = PARSENAME(Replace(OwnerAddress,',','.'),2)
+
+alter table [Data Cleaning Project].dbo.Nashville_Housing
+add OwnerSplitState nvarchar(200);
+
+update [Data Cleaning Project].dbo.Nashville_Housing
+SET OwnerSplitState = PARSENAME(Replace(OwnerAddress,',','.'),1)
+
+
+from  [Data Cleaning Project].dbo.Nashville_Housing;
+
+
+-- Removed Duplicates
+
+WITH RowNumCTE AS(
+Select *,
+	ROW_NUMBER() OVER (
+	PARTITION BY ParcelID, PropertyAddress,SalePrice,SaleDate, LegalReference
+				 ORDER BY
+					UniqueID
+					) row_num
+from  [Data Cleaning Project].dbo.Nashville_Housing
+)
+Select *
+From RowNumCTE
+Where row_num > 1
+Order by PropertyAddress
+
+
+
+Select *
+From [Data Cleaning Project].dbo.Nashville_Housing
+
+
+-- Delete Unused Columns
+
+
+Select *
+From [Data Cleaning Project].dbo.Nashville_Housing
+
+
+ALTER TABLE [Data Cleaning Project].dbo.Nashville_Housing
+DROP COLUMN OwnerAddress, TaxDistrict, PropertyAddress, SaleDate
