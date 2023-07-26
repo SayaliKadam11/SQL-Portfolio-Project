@@ -1,3 +1,5 @@
+Data Cleaning Project
+
 ---First imported data from Github and to check if all data imported correctly used following function
 
 select * from [Data Cleaning Project].dbo.Nashville_Housing;
